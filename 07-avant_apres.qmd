@@ -1,0 +1,123 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Comparaison avant-après
+
+L'intuition initiale de cette stratégie est que **le meilleur contrefactuel de l'AP est elle-même avant la mise en place du statut**. 
+
+Ainsi, nous allons comparer pour chaque AP, les taux de déforestation entre les années qui précèdent la création de l'AP et les années qui suivent la création. 
+
+En revanche, comme vu dans la partie théorique, cette approche repose sur **l'hypothèse que la seule différence entre les périodes est la mise en place de la politique**. 
+
+Autrement dit, le seul facteur entre ces différentes périodes qui impactent le taux de dégradation des forêts est la mise en place de l'AP. 
+
+Ci-dessous, un tableau représentant les dates de création des aires protégées. 
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(gt)
+# Désactiver les notations scientifiques
+options(scipen =999)
+
+# On reprend les données telles que préparées au chapitre 3
+load("data/ch3_AP_Vahatra.rds")
+
+AP_Vahatra %>%
+  mutate(an_creation = year(date_creation)) %>%
+  select(nom, an_creation) %>%
+  ggplot(aes(x = an_creation)) +
+  geom_rect(xmin = 1995, xmax = 2016, ymin = 0, 
+            ymax = 54, fill = "yellow", alpha = 0.3) +
+  geom_bar() +
+  xlim(c(NA, 2020)) + 
+  geom_vline(xintercept = c(1990, 2020), col = "red") +
+  ylim(NA, 53) +
+  ggtitle("Dates de création des AP et de disponibilité\ndes données TMF")
+```
+
+Les données mobilisées sont celles de TMF pour lesquelles on dispose d'un historique allant de 1990 à 2020. On se concentre sur les aires protégées dont le statut a été décrété entre ces deux dates. 
+
+En revanche, afin d'avoir non pas un unique taux de dégradation du couvert forestier mais une tendance (i.e l'évolution) de celui-ci, nous restreignons notre échantillon aux AP dont le statut a été octroyé entre 1995 et 2015. 
+
+En effet, si on se focalise uniquement sur le taux de déforestation juste avant et juste après, il se peut qu'un évènement ait impacté le taux de dégradation et ne représente pas réellement la dégradation du couvert forestier dans l'AP. 
+
+Par exemple, si en t-1, il y a eu un énorme feu lié à un évènement naturel, alors nous risquons de surestimer la perte de couvert forestier avant et donc d'inférer à l'AP, un impact beaucoup plus bénéfique que ce qu'il est réellement. 
+
+Notre échantillon final contient 72 AP (sur les 98 initiales de la base de données Vahatra _ en jaune sur le graphique). 
+
+Nous normalisons les dates d'octroi du statut d'AP c'est à dire qu'on transforme les années calendaires (1995, 1996,...) en année relative à la mise en place de l'AP. 
+
+Par exemple, si une AP est créée en 2000 (qui correspondra à l'année 0), toutes les autres années seront exprimées relativement à celle-ci et donc, 1995 sera égale à -5 et 2005 à 5. 
+
+Cette transformation nous permet de pouvoir visualiser les données. Dans le tableau suivant, nous avons la moyenne annuelle de la surface (exprimée en hectare et en pourcentage) de l'AP qui a été dégradé sur les 5 années précédents et suivants la mise en place de l'AP. 
+
+```{r}
+# Une fonction pour créer un jeu avec des dates normalisées
+ans_vs_crea <- function(x, vars_commenct_par = "TMFdeg_HA",
+                       ans_marge = 5) {
+  avant_apres_abs <- AP_Vahatra %>%
+    st_drop_geometry() %>%
+    select(nom, date_creation, starts_with(vars_commenct_par)) %>%
+    filter(year(date_creation) >= 1995 & year(date_creation) <= 2017) %>%
+    pivot_longer(cols = starts_with("TMF"),
+                 names_to = "variable",
+                 values_to = "valeur") %>%
+    mutate(an_valeur = str_extract(variable, "[:digit:]{4}"),
+           an_valeur = as.numeric(an_valeur),
+           an_creation = year(date_creation),
+           an_val_crea = an_valeur - an_creation,
+           sequence_crea = ifelse(an_val_crea < 0, "Avant",
+                                   ifelse(an_val_crea > 0, "Après", "Création"))) %>%
+    filter(an_val_crea >= ans_marge * -1 & an_val_crea <= ans_marge & an_val_crea != 0) %>%
+    mutate(sequence_crea = factor(sequence_crea, levels = c("Avant", "Après")))
+}
+
+# Un jeu avec les dégradations 5 ans avant et 5 ans après
+## en valeur absolue
+deg_avap_abs <- ans_vs_crea(AP_Vahatra, vars_commenct_par = "TMFdeg_HA",
+                       ans_marge = 5)
+## en valeur relative (ratio)
+deg_avap_rel <- ans_vs_crea(AP_Vahatra, vars_commenct_par = "TMFdeg_ratio",
+                       ans_marge = 5)
+
+moy_deg_avap_abs <- deg_avap_abs %>%
+  group_by(sequence_crea) %>%
+  summarise(`Moyenne sur 5 ans` = mean(valeur, na.rm = TRUE)) %>%
+  mutate(Indicateur = "Surface en valeur absolue (ha)")
+
+moy_deg_avap_rel <- deg_avap_rel %>%
+  group_by(sequence_crea) %>%
+  summarise(`Moyenne sur 5 ans` = mean(valeur, na.rm = TRUE)*100) %>%
+  mutate(Indicateur = "Surface en valeur relative (%)")
+
+moy_deg_avap <-bind_rows(moy_deg_avap_abs, moy_deg_avap_rel) %>%
+  mutate(`Moyenne sur 5 ans` = round(`Moyenne sur 5 ans`, 2)) %>%
+  pivot_wider(names_from = sequence_crea, values_from = `Moyenne sur 5 ans`) 
+
+gt(moy_deg_avap) %>% 
+  tab_header(title = "Moyenne de dégradation annuelle sur 5 ans")  %>% 
+  tab_source_note(c("Source : TMF, Carvalho et al. 2018 et association Vahatra.",
+                    "Calculs des auteurs."))
+```
+
+
+D'après le tableau ci-dessous, quelles conclusions pouvons-nous tirer ? 
+
+On peut aussi visualiser cette information sur les 10 plus grandes aires.
+
+```{r}
+# A compléter.
+
+```
+
+On va maintenant réaliser quelques tests statistiques pour analyser la significativité de ces différeces.
+
+```{r}
+# A completer.
+
+```
+
