@@ -1,119 +1,32 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 # Introduction {.unnumbered}
 
 ## Démarche
 
-Il s'agit d'un support de formation conçu pour initier des étudiants et jeunes chercheurs non familiers de l'économétrie spatiale, avec un objet très concret. Ce document a été élaboré avec les priorités suivantes :
+Il s'agit d'un support de formation conçu pour initier à l'économétrie spatiale chercheurs, doctorants et étudiants s'orientant vers une thèse. Ce document a été élaboré avec les priorités suivantes :
 
--   Familiarisation avec la démarche scientifique : recherche bibliographique, revue d'articles économétriques ;
--   Formulaion d'une question de recherche relevant de l'évaluation économétrique et recherche des donnéees permettant d'y répondre ;
+-   Compréhension des enjeux théoriques et méthodologiques soulevés par les évaluations d'impact ;
+-   Identification des spécificités et opportunités liées à l'évaluation d'interventions spatialisées ;
+-   Obtention de données spatiale permettant de démontrer et de quantifier l'impact ;
 -   Compréhension des différentes approches pour constituer un contrefactuel : randomisation, appariement, comparaison avant-après, différence de différences ;
--   Familiarisation avec l'outil de traitement statistique R.
+-   Familiarisation avec l'outil de traitement statistique R;
+-   Développement d'un regard critique sur la pertinence et la fiabilité des données mobilisées.
 
-D'autres aspects ont volontairement été placés au second plan, en particulier la discussion technique de la fiabilité, différences et biais des sources de données mobilisées, ou encore les subtilités associées aux modèles économétriques. Les méthodes économétriques mobilisées ici sont volontairement simples : pour être publiable dans une revue scientifique, un travail d'évaluation doit mobiliser des spécifications plus sophistiquées.
-
-### Améliorations à venir
-
--   Remplacer la variable de temps de parcours à une ville d'au moins 5000 habitants par une variable moins exposée à l'endogénéité, soit :
-
-    -   La distance à une ville d'au moins 5000 habitants en 2000 ; ou
-    -   La distance euclidienne à une ville, sans tenir compte du réseau de transport.
-
--   Ajouter de la discontinuité de la régression
-
-## Outils utilisés
-
-### Notebook Quarto
-
-Les éléments ci-dessous constituent le support pour les sessions pratiques de cet atelier. Ils sont réalisés en suivant une approche ouverte et reproductible fondée sur un document de type "notebook" [@bedecarrats_alternative_2017]. Un notebook rassemble à la fois :
-
--   les lignes de code du programme statistique qui traite les données ;
-
--   les résultats (calculs, tableaux, graphiques...) produits lors de l'exécution de ce programme ;
-
--   le texte rédigé par les auteurs pour expliquer le processus d'analyse et en interpréter les résultats.
-
-L'intérêt du format notebook, par rapport à l'utilisation de documents distincts pour traiter les données d'une part, et en analyser les résultats d'autre part, est multiple :
-
--   favoriser la reproductibité de la recherche (tout le processus de traitement, analyse, interprétation peut être inspecté et dupliqué) ;
-
--   faciliter le travail du chercheur (une interface pour tout faire) ; et
-
--   assurer les meilleures pratiques de collaboration (utilisation pour le versionnage, partage et fusion des travaux les outils performants développés en programmation informatique).
-
-Les traitements sont réalisés en R, qui est à la fois un logiciel et un langage open sources dédiés à l'analyse de données. Les traitements R sont inclus dans un document Quarto, un format qui exécute aussi bien des codes en R, Python, e rendus dans différents formats (LaTeX/PDF, HTML ou Word).
-
-La mise en forme des rendus Quarto est paramétrable. Ici, on a notamment placé un argument `code-fold: true` dans le fichier `_quarto.yml`. Cela fait que les blocs de code ne sont pas visible dans le rendu web par défaut : il faut cliquer sur "code" pour les déplier.
-
-### Mapme.biodiversity
-
-On s'appuie sur le package R {mapme.biodiversity}, développé par la KfW dans le cadre de l'initiative commune MAPME qui associe la KfW et l'AFD. Le package {mapme.biodiversity} facilite l'acquisition et la préparation d'un grand nombre de données (CHIRPS, Global Forest Watch, FIRMS, SRTM, Worldpop...) et calculer un grand nombre d'indicateurs de manière harmonisée (active_fire_counts, biome classification, land cover classification, population count, precipitation, soil properties, tree cover loss, travel time...). Une documentation riche est disponible sur le portail dédié du package en question [@kluve_kfw_2022].
-
-On mobilise aussi les codes d'analyse d'impact développés par la même équipe et mises à disposition dans le dépôt Github: <https://github.com/openkfw/mapme.protectedareas>. Le code développé par l'équipe est assez complexe. A des fins pédagogiques et pour s'assurer qu'on l'a bien compris, on propose ici une version simplifiée (en cours de développement).
-
-### Onyxia/SSP Cloud
-
-Les sources pour l'ensemble du code source et du texte du présent document est accessible sur Github à l'adresse suivante : <https://github.com/fBedecarrats/conservation-deforestation-madagascar>. Les analyses sont menées sur la plateforme SSP Cloud, mises à disposition par l'INSEE pour les data scientists travaillant pour des administrations publiques. Il s'agit d'une instance de stockage de données massif (S3) et de calcul haute performance (cluster Kubernetes) disposant d'une interface simplifiée permettant à l'utilisateur de configurer, lancer et administrer facilement des environnements de traitement de données (RStudio server, Jupyter lab ou autres...). Le code est conçu pour s'exécuter de la même manière en local sur un PC, mais la préparation des données sera certainement beaucoup plus longue à exécuter.
-
-### Librairies R
-
-Outre Mapme.biodiversity, on mobilise une série de librairies (appelées "packages" en R), qui facilitent grandement l'analyse. Elles sont listées dans le bloc ci-dessous.
-
-```{r Installation et chargement des librairies requises}
-# # Le package est en cours de développement, toujours installer la version en cours
-remotes::install_github("mapme-initiative/mapme.biodiversity",
-                        upgrade = "always")
-
-librairies_requises <- c( # On liste les librairies dont on a besoin
-  "tidyverse", # Une série de packages pour faciliter la manipulation de données
-  "readxl", # Pour lire les fichiers excel (Carvalho et al. 2018)
-  "writexl", # Pour écrire des fichiers excel
-  "cowplot", # Pour arranger des graphiques en illustrations composées
-  "gt", # Pour des rendus graphiques harmonisés html et pdf/LaTeX
-  "sf", # Pour faciliter la manipulation de données géographiques
-  "wdpar", # Pour télécharger simplement la base d'aires protégées WDPA
-  "webdriver", # requis pour installer phantomjs pour wdpar
-  "tmap", # Pour produire de jolies carte
-  "geodata", # Pour télécharger simplement les frontières administratives
-  "tidygeocoder", # pour obtenir les coordo GPS d'un point à partir de son nom
-  "maptiles", # Pour télécharger des fonds de carte 
-  # "mapme.biodiversity", # Acquisition et traitement des données du projet
-  "plm", # Linear Models for Panel Data and robust covariance matrices
-  "broom", # pour reformater simplement les rendus de tests statistiques
-  "stargazer", # Reformater de manière plus lisible les résumé des régressions
-  "MatchIt", # Pour le matching
-  #"glm", # Modèles linéaires généralisés (pour le PSM)
-  "optmatch", # Fonctions d'optimisation du matching
-  "rgee",
-  "did", # Méthode de double différence échelonnée de Callaway et Sant'Anna
-  "mapme.biodiversity",
-  "cobalt") # Tables et graphs d'équilibre des groupes de matching
-  
-# On regarde parmi ces librairies lesquelles ne sont pas installées
-manquantes <- !(librairies_requises %in% installed.packages())
-# On installe celles qui manquent
-if(any(manquantes)) install.packages(librairies_requises[manquantes])
-
-## On charge toutes les librairies requises
-## On fera le chargement dans le chapitres pour expliciter les manips
-# invisible(lapply(librairies_requises, require, character.only= TRUE))
-
-# TODO : repasser les paramètres ci-dessous en clair dans les chapitres
-# Système de coordonnées géographiques utilisées pour le projet : EPSG:29739
-mon_scr <- "EPSG:29739" # correspondant à Tananarive / UTM zone 39S
-# Surface des hexagones en km2
-taille_hex <- 5
-# Taille des titres des cartes
-taille_titres_cartes = 1
-# on crée un dossier de données si pas déjà disponible
-dir.create("data")
-# Désactiver les notations scientifiques
-options(scipen =999)
-```
+D'autres aspects ont volontairement été placés au second plan, en particulier les subtilités associées aux modèles économétriques. Les méthodes économétriques mobilisées ici sont volontairement simples : pour être publiable dans une revue scientifique, un travail d'évaluation doit mobiliser des spécifications plus sophistiquées.
 
 ## Cadrage général pour les méthodes d'évaluation
 
 ```{=html}
-<iframe src="/TVM_Intro_generale.pdf" width="100%" height="400px"></iframe>
+<iframe src="/presentations/TVM_Intro_generale.pdf" width="100%" height="400px"></iframe>
 ```
 
-[Cliquer ici pour télécharger la présentation](/TVM_Intro_generale.pdf)
+[Cliquer ici pour télécharger la présentation](/presentations/TVM_Intro_generale.pdf)
+
+
+## Revue des articles
+
+

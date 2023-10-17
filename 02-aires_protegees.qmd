@@ -154,34 +154,14 @@ tmap_mode("view") # En mode interactif
 tm_shape(contour_mada) +
   tm_borders() +
   tm_shape(AP_Vahatra) + 
-  tm_polygons(col = "cat_iucn", alpha = 0.6, title = "IUCN category",
+  tm_polygons(col = "cat_iucn", alpha = 0.6, title = "Catégorie IUCN",
               id = "nom",
               popup.vars = c("Acte de création" = "creation",
                              "Année de création" = "an_creation",
                              "Surface (ha)" = "hectares",
                              "Nom complet" = "full_name",
                              "Gestionnaire" = "gest_1")) +
-  tmap_options(check.and.fix = TRUE) +
-  tm_view(view.legend.position = c("right", "bottom"))
-
-
-tmap_mode("plot") # En mode interactif
-tm_shape(contour_mada) +
-  tm_borders() +
-  tm_shape(AP_Vahatra) + 
-  tm_polygons(col = "cat_iucn", alpha = 0.6, title = "Category",
-              id = "nom",
-              popup.vars = c("Acte de création" = "creation",
-                             "Année de création" = "an_creation",
-                             "Surface (ha)" = "hectares",
-                             "Nom complet" = "full_name",
-                             "Gestionnaire" = "gest_1")) +
-  tmap_options(check.and.fix = TRUE) +
-  tm_layout(legend.position = c("RIGHT", "BOTTOM"),
-            legend.title.fontface = "bold",
-            legend.title.size = .8,
-            legend.text.size = .57,
-            frame = FALSE)
+  tmap_options(check.and.fix = TRUE)
 ```
 
 On peut également réaliser un graphique qui présente l'historique de création des aires protégées. Pour plus de précisions sur la manière de produire des graphiques en R, voir l'annexe correspondante (@sec-fondamentaux).
@@ -248,7 +228,7 @@ On commence par télécharger et présenter ces données.
 # On regarde si les données WDPA sont disponibles sur l'ordinateur qui exécute
 if (file.exists("data/WDPA/WDPA_Oct2022_MDG-shapefile.zip")) {
   # Si oui, on charge
-  WDPA_Mada <- wdpa_read("data/WDPA/WDPA_Oct2022_MDG-shapefile.zip")
+  WDPA_Mada <- wdpa_read("data/WDPA/WDPA_Oct2023_MDG-shapefile.zip")
 } else {
   # Si non, on télécharge depuis protectedplanet
   WDPA_Mada <- wdpa_fetch("Madagascar", wait = TRUE,

@@ -1,0 +1,81 @@
+---
+title: "Introduction"
+author: "Florent Bédécarrats"
+editor: visual
+---
+
+## Qu'est-ce que l'évaluation ex post ?
+
+Définition du CAD-OCDE (2000) :
+
+-   Appréciation systématique et objective d'un projet, d'un programme ou d'une politique en cours ou achevé, de sa conception, de sa mise en oeuvre et de ses r´esultats. Le but est de d´eterminer la pertinence, le niveau d'atteinte des objectifs, l´efficience (...), **l'impact** et la durabilité"
+
+-   Le terme "évaluation" désigne ´egalement un processus aussi syst´ematique et objectif que possible par lequel on d´etermine la valeur et la port´ee d'une action de d´eveloppement"
+
+## Différentier l'évaluation d'autres exercices
+
+• Evaluation vs. autres formes d'appr´eciation de projet
+
+## Chaîne/cadre logique
+
+```{mermaid}
+
+graph TD
+
+A(Problème/Contexte)
+B(Objectifs)
+C(Moyens)
+D(Activités)
+E(Réalisations)
+F(Résultats)
+G(Effets)
+
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+
+```
+
+```{mermaid}
+
+graph TD
+
+A(Problème/Contexte)
+B(Objectifs)
+C(Moyens)
+D(Activités)
+E(Réalisations)
+F(Résultats)
+G(Effets)
+
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+
+H{Pertinence}
+I{Cohérence}
+J{Efficacité}
+K{Efficience}
+L{Durabilité}
+M{Impact}
+
+H -.- B
+H -.- A
+I -.- B
+I -.- A
+J -.- B
+J -.- F
+K -.- C
+K -.- F
+M -.- B
+M -.- G
+
+
+
+```
