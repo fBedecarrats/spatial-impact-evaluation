@@ -27,7 +27,7 @@ my_files <- get_bucket_df(bucket = "fbedecarrats",
                           region = "") %>%
   pluck("Key")
 
-my_local_files <- list.files("data", full.names = TRUE, recursive = TRUE)
+my_local_files <- list.files("data/mapme_biodiversity/worldpop", full.names = TRUE, recursive = TRUE)
 
 my_files_dest <- paste0("diffusion/cours_tana/", my_local_files)
 

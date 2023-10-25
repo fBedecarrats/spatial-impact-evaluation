@@ -162,8 +162,7 @@ Vahatra_poly <- calc_indicators(x = Vahatra_poly,
                                 engine = "extract") 
 ```
 
-On peut représenter le résultat dans une carte : 
-
+On peut représenter le résultat dans une carte :
 
 ```{r}
 Vahatra_poly %>%
@@ -171,7 +170,6 @@ Vahatra_poly %>%
   tm_shape() + 
   tm_fill(col = "minutes_mean")
 ```
-
 
 # Données topologiques
 
@@ -191,18 +189,19 @@ plan(multisession, workers = 6)
 
 # Indicateurs de relief de terrain
 progressr::with_progress({
-Vahatra_poly2 <- calc_indicators(x = Vahatra_poly,
+Vahatra_poly <- calc_indicators(x = Vahatra_poly,
                                 indicators = c("tri", "elevation"),
                                 stats_tri = "mean", stats_elevation = "mean")
 })
-Vahatra_poly <- Vahatra_poly %>%
-  unnest(c(tri, elevation))
+ 
 ```
 
 On peut représenter l'indice TRI (indiquant si le terrain est accidenté) moyen pour chaque aire protégée.
 
 ```{r}
-tm_shape(Vahatra_poly) + 
+Vahatra_poly %>%
+  unnest(c(tri, elevation)) %>%
+  tm_shape() + 
   tm_fill(col = "tri_mean")
 ```
 
@@ -212,7 +211,6 @@ Les données "WorldPop" fournissent des estimations détaillées de la distribut
 
 > Exercice : obtenez les ressources de worldpop et calculez la population par aire protégée.
 
-
 ```{r}
 Vahatra_poly <- get_resources(x = Vahatra_poly, resource = "worldpop")
 
@@ -221,14 +219,13 @@ Vahatra_poly <- calc_indicators(x = Vahatra_poly,
                                 indicators = "population_count", 
                                 stats_popcount = "sum")
 
-Vahatra_poly <- Vahatra_poly %>%
-   unnest(population_count) %>%
-  filter(year == 2000)
-
-tm_shape(Vahatra_poly) + 
+ 
+Vahatra_poly %>%
+  unnest(population_count) %>%
+  filter(year == 2000) %>%
+  tm_shape() + 
   tm_fill(col = "popcount_sum") 
 ```
-
 
 # Données de forêt
 
@@ -243,7 +240,5 @@ with_progress({
                                    min_cover = 10, min_size = 1)
 })
 
-Vahatra_poly <- Vahatra_poly() %>%
-  unnest(treecover_area)
-write_rds(Vahatra_poly, "Vahatra_poly.rds")
+
 ```
