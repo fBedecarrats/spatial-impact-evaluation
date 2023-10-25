@@ -1,6 +1,11 @@
-pattern <- "gfw_treecover"
-treecover <- st_read(
+pattern <- "worldpop"
+worldpop <- st_read(
   paste0("data/mapme_biodiversity/", pattern, "/tileindex_", pattern, ".gpkg")
+)
+
+pattern2 <- "nelson_et_al"
+nelson <- st_read(
+  paste0("data/mapme_biodiversity/", pattern2, "/tileindex_", pattern2, ".gpkg")
 )
 
 update_tileindex <- function(pattern) {
@@ -12,8 +17,8 @@ update_tileindex <- function(pattern) {
   
   # Modify the location column
   data <- data %>%
-    mutate(location = str_replace(location, "/out/", 
-                                  "/data/mapme_biodiversity/"))
+    mutate(location = str_replace(location, "C:/Users/fbede/Documents/Statistiques/", 
+                                  "/home/onyxia/work/"))
   
   # Remove the original file
   file.remove(file_path)
@@ -25,4 +30,4 @@ update_tileindex <- function(pattern) {
 }
 
 # Example of usage
-update_tileindex("gfw_lossyear")
+update_tileindex("worldpop")

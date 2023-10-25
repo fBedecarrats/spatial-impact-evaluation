@@ -18,19 +18,16 @@ Que l'on cherche à quantifier la biodiversité, à mesurer la pauvreté, ou à 
 ```
 https://fbedecarrats.github.io/class_polecon_of_numbers_fr/
 
-
 Ce diaporama propose un éclarage sur le mdode de production données relatives aux aires protégées, à la forêt et à la biodiversité. Il met l'accent sur les méthodologies d'acquisition et d'analyse, pour prendre du recul dans linterprétation de ces données cruciales.
 
 ```{=html}
 <iframe src="presentations/TVM2022_PresentationDesDonnees.pdf" width="100%" height="400px"></iframe>
 ```
-
 ![Cliquer ici pour télécharger la présentationz](presentations/TVM2022_PresentationDesDonnees.pdf)
 
 # Exercices pratiques à partir de R et mapme.biodiversity
 
 On va ici mobiliser une série de packages pour la manipulation des données tabulaires et spatiale, pour leur restitution graphique, mais surtout oour l'acquisition et le traitement de données spatiales.
-
 
 ```{r}
 library(tidyverse)
@@ -100,7 +97,7 @@ Le package "mapme.biodiversity" facilite l'analyse de données statistiques sur 
 
 ![](Images/mapme_biodiversity.png)
 
-La carte des aires protégées contient des objets qui sont de type géométrique MULTIPOLYGON. Cependant, le paquet mapme.biodiversity ne prend en charge que les géométries de type POLYGON. Ainsi, nous devons transformer la géométrie avant de progresser. L'objet sf résultant contient également des atributs, qui seront conservées tout au long du processus de travail. 
+La carte des aires protégées contient des objets qui sont de type géométrique MULTIPOLYGON. Cependant, le paquet mapme.biodiversity ne prend en charge que les géométries de type POLYGON. Ainsi, nous devons transformer la géométrie avant de progresser. L'objet sf résultant contient également des atributs, qui seront conservées tout au long du processus de travail.
 
 ```{r}
 Vahatra_poly <- AP_Vahatra %>%
@@ -109,10 +106,7 @@ Vahatra_poly <- AP_Vahatra %>%
   st_cast("POLYGON")
 ```
 
-
-
 La liste des ressources disponibles et des indicateurs peut être consultée [en ligne dans la documentation du package mapme.biodiversity](https://mapme-initiative.github.io/), ou dans R, via l'aide ou encore avec les fonctionns suivantes :
-
 
 ```{r}
 resources <- available_resources() %>%
@@ -133,7 +127,6 @@ Vahatra_poly <- init_portfolio(x = Vahatra_poly,
                                outdir = file.path(getwd(), "data/mapme_biodiversity"),
                                add_resources = TRUE)
 ```
-
 
 Nous pouvons ensuite demander le téléchargement d'une ressource nécessaire pour calculer des indicateurs spécifiques. Une fois l'indicateur calculé individuellement pour tous les actifs d'un portefeuille, les données sont renvoyées sous forme de colonne de liste imbriquée à l'objet original.
 
@@ -160,32 +153,45 @@ nelson %>%
   tm_raster(palette = "viridis",  style = "quantile", n = 20, colorNA = NULL) 
 ```
 
-
-Puis calculer l'accessibilité moyenne pour chaque aire protégée. 
+Puis calculer l'accessibilité moyenne pour chaque aire protégée.
 
 ```{r}
 # Indicateurs d'accessibilité
 Vahatra_poly <- calc_indicators(x = Vahatra_poly,
                                 "traveltime",  stats_accessibility = "mean",
-                                engine = "extract") %>%
-  unnest(traveltime)
+                                engine = "extract") 
 ```
+
+On peut représenter le résultat dans une carte : 
+
+
+```{r}
+Vahatra_poly %>%
+  unnest(traveltime) %>%
+  tm_shape() + 
+  tm_fill(col = "minutes_mean")
+```
+
 
 # Données topologiques
 
 Le jeu de données NASA/SRTM, ou "Shuttle Radar Topography Mission", est un ensemble de données topographiques de haute résolution capturé par le radar spatial de la navette spatiale Endeavour en février 2000. Cette mission, une collaboration entre la NASA et le National Geospatial-Intelligence Agency (NGA), avait pour objectif de cartographier la majeure partie de la Terre pour obtenir une représentation précise du relief terrestre. Les données SRTM couvrent la quasi-totalité de la surface terrestre entre les latitudes 60°N et 56°S, offrant une résolution spatiale de 30 mètres pour les données globales.
 
-Grâce à ces données, il est possible d'évaluer l'altitude moyenne d'une aire spécifique. On peut aussi calculer le TRI (Topographic Ruggedness Index), qui quantifie la variation de l'altitude dans un paysage. Il est calculé en prenant la racine carrée de la somme des carrés des différences d'altitude entre une cellule et ses voisines. Un TRI élevé indique un terrain accidenté, tandis qu'un TRI faible suggère un terrain plus plat ou uniforme. 
+Grâce à ces données, il est possible d'évaluer l'altitude moyenne d'une aire spécifique. On peut aussi calculer le TRI (Topographic Ruggedness Index), qui quantifie la variation de l'altitude dans un paysage. Il est calculé en prenant la racine carrée de la somme des carrés des différences d'altitude entre une cellule et ses voisines. Un TRI élevé indique un terrain accidenté, tandis qu'un TRI faible suggère un terrain plus plat ou uniforme.
 
 On utilise mapme.biodiversity pour calculer ces indices.
 
 ```{r}
 # Modèle numérique de terrain SRTM de la NASA
-Vahatra_poly <- get_resources(x = Vahatra_poly , resource = "nasa_srtm")
+Vahatra_poly <- get_resources(x = Vahatra_poly, resource = "nasa_srtm")
+
+# Parallélisation pour accélérer le processus
+# parallel::detectCores()
+plan(multisession, workers = 6)
 
 # Indicateurs de relief de terrain
 progressr::with_progress({
-Vahatra_poly <- calc_indicators(x = Vahatra_poly,
+Vahatra_poly2 <- calc_indicators(x = Vahatra_poly,
                                 indicators = c("tri", "elevation"),
                                 stats_tri = "mean", stats_elevation = "mean")
 })
@@ -193,28 +199,42 @@ Vahatra_poly <- Vahatra_poly %>%
   unnest(c(tri, elevation))
 ```
 
-On peut représenter l'indice TRI (indiquant si le terrain est accidenté) moyen pour chaque aire protégée. 
+On peut représenter l'indice TRI (indiquant si le terrain est accidenté) moyen pour chaque aire protégée.
 
 ```{r}
 tm_shape(Vahatra_poly) + 
   tm_fill(col = "tri_mean")
 ```
 
-
 # Faire la même chose pour les densités de populations
 
-Les données "WorldPop" fournissent des estimations détaillées de la distribution de la population à l'échelle mondiale. Plutôt que de se baser uniquement sur les recensements traditionnels, qui peuvent être obsolètes ou inexacts, le projet WorldPop utilise des méthodes avancées de modélisation statistique en combinant des informations de recensement avec d'autres sources de données, telles que les images satellite, pour produire des cartes de densité de population à avec une résolution de 1km. 
+Les données "WorldPop" fournissent des estimations détaillées de la distribution de la population à l'échelle mondiale. Plutôt que de se baser uniquement sur les recensements traditionnels, qui peuvent être obsolètes ou inexacts, le projet WorldPop utilise des méthodes avancées de modélisation statistique en combinant des informations de recensement avec d'autres sources de données, telles que les images satellite, pour produire des cartes de densité de population à avec une résolution de 1km.
 
 > Exercice : obtenez les ressources de worldpop et calculez la population par aire protégée.
+
+
+```{r}
+Vahatra_poly <- get_resources(x = Vahatra_poly, resource = "worldpop")
+
+# Indicateurs de population
+Vahatra_poly <- calc_indicators(x = Vahatra_poly,
+                                indicators = "population_count", 
+                                stats_popcount = "sum")
+
+Vahatra_poly <- Vahatra_poly %>%
+   unnest(population_count) %>%
+  filter(year == 2000)
+
+tm_shape(Vahatra_poly) + 
+  tm_fill(col = "popcount_sum") 
+```
+
 
 # Données de forêt
 
 ```{r}
 Vahatra_poly <- get_resources(Vahatra_poly, c("gfw_treecover", "gfw_lossyear"))
 
-# Parallélisation pour accélérer le processus
-# parallel::detectCores()
-# plan(multisession, workers = 6)
 
 # Indicateurs de couvert forestier
 with_progress({
@@ -227,4 +247,3 @@ Vahatra_poly <- Vahatra_poly() %>%
   unnest(treecover_area)
 write_rds(Vahatra_poly, "Vahatra_poly.rds")
 ```
-
