@@ -1,81 +1,60 @@
 ---
 title: "Introduction"
 author: "Florent Bédécarrats"
+format: revealjs
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
-## Qu'est-ce que l'évaluation ex post ?
+## Qu'est-ce que l'évaluation ex-post de projet de développement?
 
-Définition du CAD-OCDE (2000) :
+-   **Définition du CAD-OCDE (2000)**:
+    -   *Appréciation systématique et objective d'un projet, d'un programme ou d'une politique en cours ou achevée, de sa conception, de sa mise en œuvre et de ses résultats. Le but est de déterminer la pertinence, le niveau d'atteinte des objectifs, l'efficience (...), l'impact et la durabilité.*
+    -   *Le terme "évaluation" désigne également un processus aussi systématique et objectif que possible par lequel on détermine la valeur et la portée d'une action de développement.*
 
--   Appréciation systématique et objective d'un projet, d'un programme ou d'une politique en cours ou achevé, de sa conception, de sa mise en oeuvre et de ses r´esultats. Le but est de d´eterminer la pertinence, le niveau d'atteinte des objectifs, l´efficience (...), **l'impact** et la durabilité"
+## Évaluation vs. autres formes d'appréciation de projet
 
--   Le terme "évaluation" désigne ´egalement un processus aussi syst´ematique et objectif que possible par lequel on d´etermine la valeur et la port´ee d'une action de d´eveloppement"
+```{r}
+library(ggplot2)
+library(dplyr)
 
-## Différentier l'évaluation d'autres exercices
+# Données
+data <- data.frame(
+  Approche = factor(c("Audit", "Suivi/pilotage", "Evaluation", "Evaluation d'impact"), 
+                    levels = c("Evaluation d'impact", "Evaluation", "Suivi/pilotage", "Audit")), 
+  Debut = c(1, 1, 1, 4),  # Indices correspondant à Ressources, Activités, etc.
+  Fin = c(3, 4, 4.3, 5)
+)
 
-• Evaluation vs. autres formes d'appr´eciation de projet
+# Ajout des noms pour les niveaux
+levels <- c("Ressources", "Activités", "Réalisations", "Résultats", "Impacts")
 
-## Chaîne/cadre logique
-
-```{mermaid}
-
-graph TD
-
-A(Problème/Contexte)
-B(Objectifs)
-C(Moyens)
-D(Activités)
-E(Réalisations)
-F(Résultats)
-G(Effets)
-
-A --> B
-B --> C
-C --> D
-D --> E
-E --> F
-F --> G
-
-```
-
-```{mermaid}
-
-graph TD
-
-A(Problème/Contexte)
-B(Objectifs)
-C(Moyens)
-D(Activités)
-E(Réalisations)
-F(Résultats)
-G(Effets)
-
-A --> B
-B --> C
-C --> D
-D --> E
-E --> F
-F --> G
-
-H{Pertinence}
-I{Cohérence}
-J{Efficacité}
-K{Efficience}
-L{Durabilité}
-M{Impact}
-
-H -.- B
-H -.- A
-I -.- B
-I -.- A
-J -.- B
-J -.- F
-K -.- C
-K -.- F
-M -.- B
-M -.- G
-
-
+# Création du graphique
+ggplot(data) +
+  geom_segment(aes(x = Debut, xend = Fin, y = Approche, yend = Approche), 
+               color = "purple", linewidth = 12) +
+  scale_x_continuous(breaks = 1:5, labels = levels, 
+                     minor_breaks = NULL) +
+  theme_minimal() +
+  labs(title = "Des approches focalisées sur des périmètres différents", 
+       x = "Stade de la chaîne de résultats", 
+       y = "Approche")
 
 ```
+
+## Chaîne logique et évaluation
+
+La chaîne logique correspond étroitement au cadre logique souvent utilisé dans le développement de projets. Ce cadre est essentiel pour planifier et évaluer l'efficacité des interventions.
+
+
+::: {.incremental}
+
+- Quels sont les stades d'une chaine logique ?
+
+:::
+
+## Chaîne logique et évaluation
+
+![](diagrams/Logique_intervention_simple.drawio.svg)
+
