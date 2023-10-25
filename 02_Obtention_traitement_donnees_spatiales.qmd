@@ -54,7 +54,7 @@ Les données chargées ont été préalablement reformatée.
 
 ```{r}
 # On charge la version enregistrée en geojson
-AP_Vahatra <- st_read("data/Vahatra/AP_Vahatra.geojson")
+AP_Vahatra <- st_read("data/AP_Vahatra.geojson")
 
 # On génère un rendu cartographique
 tmap_mode("view") # En mode interactif
