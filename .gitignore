@@ -2,7 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-data/
 old/
 *.rds
 Initiation*
+data/*
+!data/*.*
