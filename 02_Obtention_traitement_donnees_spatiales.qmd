@@ -239,6 +239,51 @@ with_progress({
                                    indicators = "treecover_area", 
                                    min_cover = 10, min_size = 1)
 })
+write_rds(Vahatra_poly, "Vahatra_poly.rds") # on enregistre une copie au cas où
+```
 
+# Mise en forme des résultats
+
+Mapme.biodiversity produit généralement des résultats qui ont été "imbriqués", c'est-à-dire qu'une cellule du tableau contient elle-même un tableau. Pour les cas où le tableau inclus ne contient qu'une ligne (indicateur d'altitude, de terrain accidenté et de distance aux villes), on peut simplement utiliser la fonction `unnest()` qui extrait le contenu pour le placer dans une colonne. Pour les autres, il faut ajouter une étape :
+
+-   Soit sélectionner l'année qui nous intéresse (c'est le cas pour la densité de population, on ne gardera que l'année 2000) ;
+
+-   Soit faire ce qu'on appelle un "pivot" pour passer les valeurs de chaque année en colonne (c'est ce qu'on fera pour les données annuelles de couvert forestier)
+
+```{r}
+Vahatra_poly2 <- Vahatra_poly %>%
+  unnest(c(traveltime, tri, elevation)) %>% # on déplie les indicateurs simples
+  unnest(population_count) %>%
+  filter(year == 2000) %>% # Pour la densité de population, on ne garde que 2000
+  select(-year) %>% # On enlève la variable year
+  rename(popcount_2000 = popcount_sum) %>%
+  unnest(treecover_area) %>%
+  as.data.frame() %>%
+  pivot_wider(values_from = treecover, names_from = years,
+              names_prefix = "treecover_") %>%
+  st_sf()
+```
+
+> Exercice : Inspectez le contenu de Vahatra_poly2 et assurez-vous que vous ayez bien le bon résultat
+
+```{r}
+# On crée une fonction pour simplifier le calcul de moyennes pondérées
+
+
+AP_Vahatra2 <- Vahatra_poly2 %>%
+  group_by(nom, cat_iucn, creation, date_creation, date_modification, 
+           mention_changement, num_atlas_, full_name, province, region, 
+           district, gest_1, gest_2, type_ap, an_creation) %>%
+  summarise(
+    hectares_sum = sum(hectares),
+    minutes_mean = weighted.mean(minutes_mean, hectares),
+    tri_mean = weighted.mean(tri_mean, hectares),
+    elevation_mean = weighted.mean(elevation_mean, hectares),
+    popcount_2000 = sum(popcount_2000),
+    across(starts_with("treecover"), sum)
+  ) %>%
+  ungroup()
+
+write_rds(AP_Vahatra2, "data/AP_Vahatra2")
 
 ```
