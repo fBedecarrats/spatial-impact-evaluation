@@ -22,6 +22,7 @@ save_from_s3 <- function(from, to) {
     region = "")
 }
 
+put_to_s3("data/AP_Vahatra2.rds", "diffusion/cours_tana/data/AP_Vahatra2.rds")
 
 # Send all firms files to S3
 firms_s3 <- get_bucket_df(bucket = "fbedecarrats", region = "",

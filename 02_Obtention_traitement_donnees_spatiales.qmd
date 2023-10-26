@@ -101,7 +101,7 @@ La carte des aires protégées contient des objets qui sont de type géométriqu
 
 ```{r}
 Vahatra_poly <- AP_Vahatra %>%
-  filter(type_ap == "TERRESTRE") %>%
+ # filter(type_ap == "TERRESTRE") %>%
   filter(st_geometry_type(.) == "MULTIPOLYGON") %>%
   st_cast("POLYGON")
 ```
@@ -284,6 +284,6 @@ AP_Vahatra2 <- Vahatra_poly2 %>%
   ) %>%
   ungroup()
 
-write_rds(AP_Vahatra2, "data/AP_Vahatra2")
+write_rds(AP_Vahatra2, "data/AP_Vahatra2.rds")
 
 ```
