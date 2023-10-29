@@ -32,3 +32,11 @@ my_local_files <- list.files("data/mapme_biodiversity/worldpop", full.names = TR
 my_files_dest <- paste0("diffusion/cours_tana/", my_local_files)
 
 map2(my_local_files, my_files_dest, put_to_s3)
+
+put_to_s3(from = "data/carte_mailles.png",
+          to = "diffusion/cours_tana/data/carte_mailles.png")
+
+copy_object(from = "diffusion/deforestation_madagascar/data_s3/ch3",
+            from_bucket = ,
+            to = "diffusion/cours_tana/data/carte_mailles.png",
+            to_bucket = )
