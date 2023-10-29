@@ -83,6 +83,10 @@ rct_AP_Mada <- AP_Vahatra %>%
              `Forest loss (ha) between 2006-2016 (absolute loss)`) /
            `Forest cover (ha) in 1996` * 100)
 
+# On enregistre le jeu de données pour s'en resservir dans les prochaines 
+# sessions
+write_rds(rct_AP_Mada, "data/Vahatra_deforestation.rds")
+
 # On fait une série de tests de comparaison de moyenne
 t_tests <- rct_AP_Mada %>% 
   # On applique aux variables de déforestation, couvert en 96 et taille
@@ -198,7 +202,7 @@ equilibre_autres %>%
              subtitle = "(exercice : \"comme si\" c'était une RCT)") %>%
   tab_source_note("Source : Nasa SRTM, Nelson et al.")
 
-save(rct_AP_Mada, file = "data/rct_AP_Mada.rds")
+write_rds(rct_AP_Mada, file = "data/rct_AP_Mada.rds")
 ```
 
 Le temps de trajet aux villes est significativement distinct entre les deux groupes. Attention, car cette variable pose un problème d'endogénéité, car le jeu de données utilisé pour cela date de 2015, alors que notre période d'étude démarre en 1996. Or, il est possible que la présence d'aires protégées ait eu une incidence sur la construction ou l'amélioration des tronçons routiers à proximité (discussion en séance sur ce point). Il semble important de tenir compte de l'accessibilité géographiques des aires protégées, mais une donnée antérieure à 2015 serait préférable.
