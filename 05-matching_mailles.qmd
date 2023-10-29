@@ -17,8 +17,7 @@ library(tmap)
 library(sf)
 library(mapme.biodiversity)
 library(geodata)
-library(tidygeocoder) # pour obtenir les coordo GPS d'un point à partir de son nom
-library(maptiles) # Pour télécharger des fonds de carte
+
 
 contour_mada <- gadm(country = "Madagascar", resolution = 1, level = 0,
                      path = "data/GADM") %>%
