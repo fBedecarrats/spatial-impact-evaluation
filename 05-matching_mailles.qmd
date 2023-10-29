@@ -17,6 +17,7 @@ library(tmap)
 library(sf)
 library(mapme.biodiversity)
 library(geodata)
+library(future)
 
 
 contour_mada <- gadm(country = "Madagascar", resolution = 1, level = 0,
@@ -83,6 +84,9 @@ if (file.exists("data/grille_mada_donnees_raster.rds")) {
   
   # Traitement des données satellitaires avec {mapme.bidiversity}---------------
   
+  # Utiliser une parallélisation importante
+  plan(multisession, workers = 8)
+  
   # Constitution d'un portefeuille (voir la documentation)
   grille_mada <- init_portfolio(x = grille_mada, 
                                 years = 2000:2022,
@@ -97,43 +101,48 @@ if (file.exists("data/grille_mada_donnees_raster.rds")) {
   grille_mada <-  get_resources(x = grille_mada,
                                 resources = "soilgrids",  layers = "clay", 
                                 depths = "5-15cm", stats = "mean")
-  # Données sur le couvert forestier de Global Forest Watch
-  # grille_mada <- get_resources(x = grille_mada, 
-  #                              resources = c("gfw_treecover", "gfw_lossyear", 
-  #                                            "gfw_emissions"))
+  #  Données sur le couvert forestier de Global Forest Watch
+  grille_mada <- get_resources(x = grille_mada,
+                               resources = c("gfw_treecover", "gfw_lossyear"))
   # Modèle numérique de terrain SRTM de la NASA
   grille_mada <- get_resources(x = grille_mada, resource = "nasa_srtm")
-  # Données de feux
-  grille_mada <- get_resources(x = grille_mada, resource = "nasa_firms",
-                               instrument = "MODIS")
   
+  # données de population
   grille_mada <- get_resources(x = grille_mada, resource = "worldpop")
   
   # Calcul des indicateurs -----------------------------------------------------
-  
+  tic()
   # Indicateurs d'accessibilité
   grille_mada <- calc_indicators(x = grille_mada,
                                  "traveltime",  stats_accessibility = "mean",
                                  engine = "extract")
+  toc()
+  tic()
   # Indicateurs de sols
   
   grille_mada <- calc_indicators(x = grille_mada,
                                  "soilproperties", stats_soil = "mean", 
                                  engine = "extract")
- 
-   # Indicateurs de couvert forestier
-  grille_mada <- calc_indicators(x = grille_mada,
-                                 indicators = "treecover_area_and_emissions", 
-                                 min_cover = 30, min_size = 1)
+  toc()
+  
+  tic()
   # Indicateurs de relief de terrain
   grille_mada <- calc_indicators(x = grille_mada,
-                               indicators = c("tri", "elevation"),
-                               stats_tri = "mean", stats_elevation = "mean")
-  # Indicateurs d'incendies
+                                 indicators = c("tri", "elevation"),
+                                 stats_tri = "mean", stats_elevation = "mean")
+  toc()
+  tic()
+  # Indicateurs de relief de terrain
   grille_mada <- calc_indicators(x = grille_mada,
-                                 "active_fire_counts")
+                                 indicators = c("tri", "elevation"),
+                                 stats_tri = "mean", stats_elevation = "mean")
+  toc()
+  tic()
+  # Indicateurs de couvert forestier
   grille_mada <- calc_indicators(x = grille_mada,
-                                 "active_fire_properties")
+                                 indicators = "treecover_area", 
+                                 min_cover = 30, min_size = 1)
+  toc()
   
   # Sauvegarde du résultat
   save(grille_mada, file = "data_s3/grille_mada_donnees_raster.rds")
