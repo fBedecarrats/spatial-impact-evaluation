@@ -30,7 +30,7 @@ library(stargazer) # Pour préssenter les résultats de régressions
 library(htmltools)
 
 # Désactiver les notations scientifiques
-options(scipen =999)
+options(scipen = 999)
 # On recharge les données préparées dans le chapitre 3
 Vahatra_defor <- read_rds("data/rct_AP_Mada.rds") %>%
   # On renome les variables pour les afficher plus facilement/clairement
@@ -45,6 +45,12 @@ Vahatra_defor_noNA <- Vahatra_defor %>%
   filter(!is.na(dist_ville) & !is.na(altitude) & !is.na(indice_accidente)) %>%
   # La vatiable de traitement doit être recodée en [0, 1]
   mutate(traitement = ifelse(Groupe == "Traitement", 1, 0)) 
+
+summary(Vahatra_defor_noNA)
+
+Vahatra_defor_noNA %>%
+  group_by(Groupe, traitement) %>%
+  summarise(effectif = n())
 
 Vahatra_defor_noNA %>%
   group_by(Groupe) %>%
@@ -70,7 +76,7 @@ Où les variables de cette équation sont définies de la manière suivante :
 -   **surface_ha** : Il s'agit de la taille de l'aire en hectares. C'est une variable continue.
 -   **couv_foret_96** : C'est le pourcentage de couverture forestière de l'aire en 1996. C'est également une variable continue.
 -   **altitude** : Indique l'altitude de l'aire. Encore une fois, c'est une variable continue.
--   **indice_accidente** : Un indice représentant à quel point le terrain est accidenté. C'est probablement une variable continue ou ordonnée.
+-   **indice_accidente** : Un indice représentant à quel point le terrain est accidenté. C'est probablement une variable continue.
 -   **dist_ville** : Distance de l'aire par rapport à la ville la plus proche ayant au moins 5 000 habitants.
 
 Dans l'exemple précédent, la relation entre $T^*$ et $T$ est donnée par :
@@ -80,8 +86,7 @@ $$
 P(\text{traitement} = 1) &= P(T^* > 0) \\
 &= \Phi(\beta_0 + \beta_1 \times \text{surface_ha} + \beta_2 \times \text{couv_foret_96} + \beta_3 \times \text{altitude} + \beta_4 \times \text{indice_accidente} + \beta_5 \times \text{dist_ville})
 \end{align*}
-$$
-où $\Phi$ est la fonction de répartition de la loi normale standard.
+$$ où $\Phi$ est la fonction de répartition de la loi normale standard.
 
 Ce que cette équation nous dit, c'est que la probabilité que $T$ soit égale à 1 est la probabilité que la variable latente $T^*$ soit supérieure à 0. Cette probabilité est donnée par la valeur de la fonction de répartition de la loi normale standard ($\Phi$) évaluée au niveau linéaire des prédicteurs.
 
@@ -107,6 +112,8 @@ reg_select <- glm(formula = pscor,
 match_out1 <- stargazer(reg_select, type = "html") 
 
 browsable(HTML(paste(match_out1, collapse = "")))
+
+summary(reg_select)
 ```
 
 > Exercice : analysez ce résultat. Quels facteurs sont corrélés avec la désignation précoce comme aire protégée ?
@@ -143,10 +150,10 @@ plot(def_96_16_match, type = "jitter", interactive = FALSE)
 On peut également représenter l'équilibre entre les variables avant et après traitement avec les graphiques suivants.
 
 ```{r}
-bal.plot(def_96_16_match, var.name = "dist_ville", which = "both")
+bal.plot(def_96_16_match, var.name = "couv_foret_96", which = "both")
 ```
 
-> **Exercice** : Quel effet a eu l'appariement sur la varialbe de distance à la ville ? Les autres variables d'appariement produisent-elles un effet aussi visible ?
+> **Exercice** : Quel effet a eu l'appariement sur la variable de distance à la ville ? Les autres variables d'appariement produisent-elles un effet aussi visible ?
 
 Le modèle qu'on utilise pour estimer l'impact est très proche de celui exposé ci-dessus, à la différence que la variable de traitement passe dans la partie droite, et qu'elle est remplacée par la déforestation.
 

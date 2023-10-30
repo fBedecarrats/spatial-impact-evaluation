@@ -3,6 +3,7 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+
 # Données en mailles
 
 Une approche courante consiste à diviser le territoires en mailles, carrées ou en forme d'alvéoles d'abeilles (hexagones), et à calculer des indicateurs pour chacune de ces mailles.
@@ -18,12 +19,10 @@ library(sf)
 library(mapme.biodiversity)
 library(geodata)
 library(future)
-library(tidyverse)
 library(MatchIt)
 library(stargazer)
 library(sf)
 library(cobalt)
-library(tmap)
 
 contour_mada <- gadm(country = "Madagascar", level = 0,
                      path = "data/GADM") %>%
@@ -80,8 +79,6 @@ tm_shape(grille_zoom) +
 On va ensuite utiliser [le package mapme.biodiversity](https://mapme-initiative.github.io/mapme.biodiversity/index.html) pour calculer, pour chaque hexagones, une série d'indicateurs : temps de parcours jusqu'à la ville (définie comme toute localité de 5000 habitants) la plus proche en 2015, teneur du sol en argile et couvert forestier par année).
 
 ``` {r}
-#| eval: false
-
 
 if (file.exists("data/grille_mada_donnees_raster.rds")) {
   load("data/grille_mada_donnees_raster.rds")
@@ -325,14 +322,18 @@ grille_mada_AP <- grille_mada_AP %>%
 
 
 grille_mada_AP2 <- grille_mada_AP %>%
-    unnest(cols = treecover_area_and_emissions) %>%
-    pivot_wider(names_from = "years", values_from = c("treecover", "emissions")) %>%
-    mutate(var_treecover = (treecover_2020 - treecover_2000)/treecover_2000,
-           sum_emissions = rowSums(across(starts_with("emission")), na.rm = T)) %>%
-    rename(init_treecover_2000 = treecover_2000) %>% # pour le garder
-    select(-starts_with("treecover"), -starts_with("emission")) %>%
-    rename(treecover_2000 = init_treecover_2000) %>%
-    relocate(geometry, .after = last_col())
+  unnest(cols = treecover_area_and_emissions) %>%
+  pivot_wider(names_from = "years", values_from = c("treecover", "emissions")) %>%
+  mutate(var_treecover = (treecover_2020 - treecover_2000)/treecover_2000,
+         sum_emissions = rowSums(across(starts_with("emission")), na.rm = T)) %>%
+  rename(init_treecover_2000 = treecover_2000) %>% # pour le garder
+  select(-starts_with("treecover"), -starts_with("emission")) %>%
+  rename(treecover_2000 = init_treecover_2000) %>%
+  relocate(geometry, .after = last_col()) %>%
+  relocate(position_ap, .before = everything()) %>%
+  relocate(AP_touche:gestionnaire, .after = position_ap) %>%
+  select(-assetid) %>%
+  arrange(AP_touche)
 
 # Une vue après classification
 tmap_mode("plot")
@@ -344,5 +345,121 @@ tm_shape(grille_mada_AP) +
             main.title.size = 1,
             legend.outside = TRUE)
 ```
-La suite de l'analyse sur :
-https://fbedecarrats.github.io/conservation-deforestation-madagascar/06b-matching_mailles.html
+
+> Exercice: inspecter le jeu de données
+
+## Procédure en avec/sans
+
+Une procédure détaillée est proposée dans <https://github.com/openkfw/mapme.protectedareas>
+
+On commence ici par une approche naïve, dans le sens où on apparie simplement les zones dans les aires protégées avec les zones hors aires protégées pour expliquer le principe du matching ("appariement", en français).
+
+Les données ne peuvent pas contenir de données manquantes sur les variables d'appariement, donc on les écarte.
+
+```{r}
+library(tidyverse)
+library(MatchIt)
+library(stargazer)
+library(sf)
+library(cobalt)
+library(tmap)
+
+# Taille des titres des cartes
+taille_titres_cartes = 1
+
+
+# On référence le nom des variables qui vont servir à l'analyse
+variables_analyse <- c("assetid","treatment","distance_minutes_5k_110mio",
+                       "tri_mean", "elevation_mean", "mean_clay_5_15cm",
+                       "treecover_2000", "var_treecover")
+
+# On renomme le ficher 'df' (dataframe) : plus concis dans les commandes ensuite
+df <- grille_mada_AP2 %>%
+  # On supprime toutes les lignes pour lesquelles au moins 1 valeur variable 
+  # est manquante parmi les variables d'analyse
+  mutate(treatment = position_ap == "Intérieur") %>% 
+  drop_na(any_of(variables_analyse))
+
+```
+
+On analyse maintenant le score de propension.
+
+```{r}
+#| output: false
+# Get propensity scores
+glm_out <- glm(treatment ~ 
+                 distance_minutes_5k_110mio + 
+                 mean_clay_5_15cm + 
+                 tri_mean +
+                 elevation_mean + 
+                 treecover_2000,  
+               family = binomial(link = "probit"),
+               data = df)
+
+cellmatch_out1 <- stargazer(glm_out,
+                            summary = TRUE,
+                            type = "html",
+                            title = "Probit regression for matching frame ")
+browsable(HTML(paste(cellmatch_out1, collapse = "")))
+```
+
+
+> Exercice : interpréter le résultat du score de propension. 
+
+
+```{r}
+m_out <- matchit(treatment ~ 
+                   distance_minutes_5k_110mio + 
+                   mean_clay_5_15cm + 
+                   tri_mean +
+                   elevation_mean + 
+                   treecover_2000,
+                 data = df,
+                 method = "nearest",
+                 replace = TRUE,
+                 # exact = ~ as.factor(NAME_0),
+                 distance = "glm", 
+                 discard = "both", # common support: drop units from both groups 
+                 link = "probit")
+
+print(m_out)
+# print(summary(m_out, un = FALSE))
+bal_table <- bal.tab(m_out, un = TRUE)
+print(bal_table)
+m_data <- match.data(m_out) %>%
+  st_sf()
+
+# On visualise les données appareillées
+tm_shape(contour_mada) +
+  tm_borders() +
+  tm_shape(m_data) +
+  tm_fill(col = "treatment", palette = "Set1", title = "Groupes d'appariement",
+          labels = c("Contrôle", "Traitement")) +
+  tm_layout(legend.outside = TRUE,
+            main.title = "Localisation des groupes de traitement et de contrôle",
+            main.title.position = c("center", "top"),
+            main.title.size = taille_titres_cartes)
+```
+
+> Exercice: Réaliser des tests d'équilibre
+
+
+On réalise la régression.
+
+```{r}
+#| output: false
+
+modele <- lm(formula = var_treecover ~
+               treatment +
+               distance_minutes_5k_110mio + 
+               mean_clay_5_15cm + 
+               tri_mean +
+               elevation_mean + 
+               treecover_2000,
+             data = m_data,
+             weights = weights)
+cellmatch_out2 <- stargazer(modele, type = "html") 
+browsable(HTML(paste(cellmatch_out2, collapse = "")))
+```
+
+> Exercice : interpréter le résultat
