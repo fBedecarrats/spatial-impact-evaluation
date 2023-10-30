@@ -7,7 +7,7 @@ editor_options:
 # Méthode d'appariement
 
 ```{=html}
-<iframe src="TVM_Matching.pdf" width="100%" height="400px"></iframe>
+<iframe src="presentations/TVM_Matching.pdf" width="100%" height="400px"></iframe>
 ```
 [Cliquer ici pour télécharger la présentation](TVM_Matching.pdf).
 
@@ -27,11 +27,11 @@ library(MatchIt) # Pour réaliser les appariements.
 library(cobalt) # Pour les tests d'équilibre sur l'appariement
 library(gt) # Pour faire de jolies tables
 library(stargazer) # Pour préssenter les résultats de régressions
+library(htmltools)
 
 # Désactiver les notations scientifiques
 options(scipen =999)
 # On recharge les données préparées dans le chapitre 3
-load("data/rct_AP_Mada.rds")
 Vahatra_defor <- read_rds("data/rct_AP_Mada.rds") %>%
   # On renome les variables pour les afficher plus facilement/clairement
   rename(surface_ha = `Surface (ha)`, 
@@ -151,10 +151,8 @@ bal.plot(def_96_16_match, var.name = "dist_ville", which = "both")
 Le modèle qu'on utilise pour estimer l'impact est très proche de celui exposé ci-dessus, à la différence que la variable de traitement passe dans la partie droite, et qu'elle est remplacée par la déforestation.
 
 $$
-Y = \alpha + \beta_{0}T + \beta_{1}A + \beta_{2}B + \beta_{3}C + \beta_{4}D + \beta_{5}E + \varepsilon
+\text{Déforestation 1996-2016} = \alpha + \beta_{0}T + \beta_{1}\text{surface_ha} + \beta_{2}\text{couv_foret_96} + \beta_{3}\text{altitude} + \beta_{4}D + \beta_{5}\text{indice_accidente} + \beta_{6}\text{dist_ville} + \varepsilon
 $$
-
-Où Y est la déforestation, T est le traitement, A est la taille (surface en hectares, B le taux de couverture forestière en 1996, C l'altitude, D, le caractère accidenté et E le temps de parcours à une ville d'au moins 5000 habitants.
 
 Cette formule est codée en R de la manière suivante :
 
