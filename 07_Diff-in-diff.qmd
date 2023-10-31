@@ -32,6 +32,7 @@ options(scipen = 999) # On désactive les notations scientifiques
 
 # On prépare le jeu de données au format attendu par {did}
 ap_did <- AP_Vahatra %>%
+  st_drop_geometry() %>%
   select(nom, date_creation, num_atlas = num_atlas_, starts_with("TMF"),
          cat_iucn = cat__iucn) %>%
   mutate(annee_creation = year(date_creation)) %>%
@@ -116,7 +117,7 @@ att_mailles_def <- att_gt(yname = "treecover",
                           idname = "assetid",
                           gname = "an_creation",
                           data = grille_mada_AP_long,
-                          control_group = "notyettreated")
+                          control_group = "nevertreated")
 # On visualise les résultats.
 ggdid(att_mailles_def) +
   theme(axis.text.x =  element_text(angle = 45, hjust = 1))
@@ -166,5 +167,29 @@ L'ajout des quatre variables de contrôle (temps de trajet à une ville, altitud
 On doit toutefois souligner : 
   1) Qu'on s'appuie ici sur les données GFC et qu'on ne dispose donc de recul que depuis 2000, à la différence des données TMF qui démarrent en 1990, avec toutefois une fiabilité limitée pour la première décennie ;
 2) que la méthode prenant comme contrefactuel les zones situées dans des aires protégées en 2015 réduit la taille d'échantillon et la période d'observation, par opposition à l'approche consistant à utiliser comme contrefactuel des zones non traitées, par exemples celles désignées par matching dans le [Chapitre @sec-matching_mailles 
-                                                                                                                                                                                                                                                                                       
-                                                                                                                                                                                                                                                                                       
+
+## Double différence en utilisant comme contrôle les jamais traités
+
+```{r}
+grille_mada_AP_long2 <- grille_mada_AP_long %>%
+  mutate(an_creation = ifelse(is.na(an_creation), 0, an_creation))
+
+# On passe ces paramètres au package did
+att_mailles_def_crtl2 <- att_gt(yname = "treecover",
+                               tname = "years",
+                               idname = "assetid",
+                               gname = "an_creation",
+                               xformla = ~ distance_minutes_5k_110mio + 
+                                 mean_clay_5_15cm + tri_mean + elevation_mean,
+                               data = grille_mada_AP_long2)
+# On visualise les résultats.
+ggdid(att_mailles_def_crtl2) +
+  theme(axis.text.x =  element_text(angle = 45, hjust = 1))
+
+
+agg.simple2 <- aggte(att_mailles_def_crtl2, type = "simple", na.rm = TRUE)
+
+summary(agg.simple2)
+
+```
+
